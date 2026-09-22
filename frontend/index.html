@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Retail Loss Protection Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <header class="navbar">
+        <h1>🛡️ Retail Loss Protection System</h1>
+        <span class="status-badge stopped" id="statusBadge">⏹ STOPPED</span>
+    </header>
+
+    <main class="dashboard">
+        <section class="video-section">
+            <h2>Live Camera Feed</h2>
+
+            <div class="camera-grid" id="cameraGrid">
+
+                <div class="camera-box" data-cam="1">
+                    <div class="video-wrapper">
+                        <img id="videoFeed1" src="" alt="Camera 1 feed" class="video-frame">
+                        <div id="pausedOverlay1" class="paused-overlay">
+                            <p>⏹ Feed Not Started</p>
+                        </div>
+                        <span class="cam-label">Camera 1</span>
+                        <div id="zoneOverlay1" class="zone-overlay" data-cam="1">
+                            <span class="zone-label">MONITORED ZONE</span>
+                            <span class="zone-remove" data-cam="1">✕</span>
+                            <span class="zone-resize" data-cam="1"></span>
+                        </div>
+                    </div>
+                    <div class="cam-controls">
+                        <select id="deviceSelect1" class="device-select">
+                            <option value="0">Laptop camera  </option>
+                            <option value="1" selected>Mobile Camera </option>
+                        </select>
+                        <button class="mini-btn mini-start" data-action="start" data-cam="1">▶</button>
+                        <button class="mini-btn mini-pause" data-action="pause" data-cam="1" disabled>⏸</button>
+                        <button class="mini-btn mini-stop" data-action="stop" data-cam="1" disabled>⏹</button>
+                    </div>
+                </div>
+
+                <div class="camera-box" data-cam="2">
+                    <div class="video-wrapper">
+                        <img id="videoFeed2" src="" alt="Camera 2 feed" class="video-frame">
+                        <div id="pausedOverlay2" class="paused-overlay">
+                            <p>⏹ Feed Not Started</p>
+                        </div>
+                        <span class="cam-label">Camera 2</span>
+                        <div id="zoneOverlay2" class="zone-overlay" data-cam="2">
+                            <span class="zone-label">MONITORED ZONE</span>
+                            <span class="zone-remove" data-cam="2">✕</span>
+                            <span class="zone-resize" data-cam="2"></span>
+                        </div>
+                    </div>
+                    <div class="cam-controls">
+                        <select id="deviceSelect2" class="device-select">
+                            
+                            <option value="0" selected>Laptop camera </option>
+                            <option value="1">Mobile Camera  </option>
+                        </select>
+                        <button class="mini-btn mini-start" data-action="start" data-cam="2">▶</button>
+                        <button class="mini-btn mini-pause" data-action="pause" data-cam="2" disabled>⏸</button>
+                        <button class="mini-btn mini-stop" data-action="stop" data-cam="2" disabled>⏹</button>
+                    </div>
+                </div>
+
+                
+               
+
+            </div>
+
+            <button id="closeFullscreenBtn" class="fullscreen-close hidden">✕ Close</button>
+
+            <div class="alerts-box">
+                <h2>⚠ Active Alerts</h2>
+                <p class="no-alerts" id="noAlertsMsg">No suspicious activity detected.</p>
+                <div id="alertsList"></div>
+            </div>
+
+            <div class="alerts-box">
+                <h2>🎒 Concealment Alerts</h2>
+                <p class="no-alerts" id="noConcealMsg">No item concealment detected.</p>
+                <div id="concealList"></div>
+            </div>
+
+            <div class="alerts-box">
+                <h2>📋 Alert History Log</h2>
+                <p class="no-alerts" id="noHistoryMsg">No incidents recorded yet.</p>
+                <div id="historyList"></div>
+            </div>
+        </section>
+
+        <aside class="controls-panel">
+            <div class="stats-box">
+                <h2>Analytics <span class="analytics-note">(Camera 1)</span></h2>
+
+                <div class="stat-row">
+                    <span class="stat-label">Currently Present</span>
+                    <span class="stat-value" id="personCount">0</span>
+                </div>
+
+                <div class="stat-row">
+                    <span class="stat-label">Total Unique Visitors</span>
+                    <span class="stat-value" id="totalCount">0</span>
+                </div>
+
+                <div class="stat-row">
+                    <span class="stat-label">Total IN</span>
+                    <span class="stat-value stat-in" id="entryCount">0</span>
+                </div>
+
+                <div class="stat-row">
+                    <span class="stat-label">Total OUT</span>
+                    <span class="stat-value stat-out" id="exitCount">0</span>
+                </div>
+
+                <div class="stat-row">
+                    <span class="stat-label">Camera Status</span>
+                    <span class="stat-value" id="cameraStatus">Inactive</span>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

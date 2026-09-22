@@ -1,0 +1,380 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+body {
+    background-color: #0b1120;
+    color: #e2e8f0;
+}
+
+.navbar {
+    background: linear-gradient(90deg, #1e293b, #0f172a);
+    padding: 20px;
+    text-align: center;
+    border-bottom: 2px solid #334155;
+}
+
+.navbar h1 {
+    font-size: 24px;
+    letter-spacing: 0.5px;
+}
+
+.status-badge {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.status-badge:not(.paused):not(.stopped) {
+    color: #22c55e;
+}
+
+.status-badge.paused {
+    color: #f59e0b;
+}
+
+.status-badge.stopped {
+    color: #ef4444;
+}
+
+.dashboard {
+    display: flex;
+    gap: 20px;
+    padding: 25px;
+    align-items: flex-start;
+}
+
+.video-section {
+    flex: 3;
+    background-color: #111827;
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px solid #1f2937;
+}
+
+.video-section h2 {
+    margin-bottom: 12px;
+    font-size: 17px;
+    color: #94a3b8;
+}
+
+.paused-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #cbd5e1;
+    text-align: center;
+    padding: 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+.controls-panel {
+    flex: 1;
+    min-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stats-box {
+    margin-top: 0;
+    background-color: #111827;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #1f2937;
+}
+
+.stats-box h2 {
+    font-size: 16px;
+    color: #94a3b8;
+    margin-bottom: 8px;
+}
+
+.analytics-note {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: normal;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #1f2937;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.stat-value {
+    color: #22c55e;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.stat-in {
+    color: #22c55e;
+}
+
+.stat-out {
+    color: #ef4444;
+}
+
+.alerts-box {
+    margin-top: 15px;
+    background-color: #111827;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #1f2937;
+}
+
+.no-alerts {
+    color: #64748b;
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+.alert-item {
+    background-color: rgba(220, 38, 38, 0.15);
+    border-left: 4px solid #dc2626;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-top: 8px;
+    color: #fca5a5;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.history-item {
+    background-color: rgba(148, 163, 184, 0.08);
+    border-left: 4px solid #64748b;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-top: 6px;
+    color: #cbd5e1;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.history-time {
+    color: #64748b;
+    font-size: 12px;
+}
+
+/* ---- Multi-camera grid ---- */
+
+.camera-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.camera-box {
+    position: relative;
+    background-color: #0b1120;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid #1f2937;
+}
+
+.camera-box .video-wrapper {
+    position: relative;
+    background-color: #000;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+}
+
+.camera-box .video-wrapper .video-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.cam-label {
+    position: absolute;
+    bottom: 6px;
+    left: 8px;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #cbd5e1;
+    z-index: 2;
+}
+
+.cam-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    background-color: #111827;
+}
+
+.device-select {
+    flex: 1;
+    min-width: 0;
+    background-color: #1e293b;
+    color: #cbd5e1;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 6px 4px;
+    font-size: 12px;
+}
+
+.mini-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    color: white;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.mini-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.mini-start {
+    background-color: #16a34a;
+}
+
+.mini-pause {
+    background-color: #d97706;
+}
+
+.mini-stop {
+    background-color: #dc2626;
+}
+
+/* Fullscreen mode */
+.camera-grid.fullscreen-mode .camera-box {
+    display: none;
+}
+
+.camera-grid.fullscreen-mode .camera-box.is-fullscreen {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    border-radius: 0;
+}
+
+.camera-grid.fullscreen-mode .camera-box.is-fullscreen .video-wrapper {
+    flex: 1;
+    aspect-ratio: auto;
+    background-color: #000;
+}
+
+.fullscreen-close {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1001;
+    background-color: #dc2626;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* ===== Adjustable Monitored Zone ===== */
+
+.zone-overlay {
+    position: absolute;
+    border: 2px solid #3b82f6;          /* blue border jaisa pehle tha */
+    background: rgba(59, 130, 246, 0.12);
+    cursor: move;
+    box-sizing: border-box;
+    /* default position/size - JS isko camera ke hisab se set karega */
+    top: 10%;
+    left: 55%;
+    width: 30%;
+    height: 70%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    z-index: 5;
+}
+
+.zone-overlay.zone-hidden {
+    display: none;
+}
+
+.zone-remove {
+    background: #ef4444;
+    color: white;
+    font-size: 11px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin: 2px;
+    user-select: none;
+}
+
+.zone-label {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    max-width: calc(100% - 26px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #3b82f6;
+    font-weight: bold;
+    font-size: 12px;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    pointer-events: none;
+}
+
+.zone-resize {
+    position: absolute;
+    right: -5px;
+    bottom: -5px;
+    width: 12px;
+    height: 12px;
+    background: #3b82f6;
+    border: 1px solid white;
+    border-radius: 2px;
+    cursor: nwse-resize;
+}
