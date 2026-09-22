@@ -1,0 +1,11 @@
+[33mcommit e33f2d658f127bdb14979637893683374dcd21b2[m
+Author: hafiz ayyaf ayub <hafizayyafayub@gmail.com>
+Date:   Tue Sep 22 13:16:54 2026 +0500
+
+    Remove large model file and add gitignore
+
+[33mcommit 99d817891e2cc5adaa7734e23abb3ee4db31cb3b[m
+Author: hafiz ayyaf ayub <hafizayyafayub@gmail.com>
+Date:   Tue Sep 22 13:06:26 2026 +0500
+
+    Initial commit
