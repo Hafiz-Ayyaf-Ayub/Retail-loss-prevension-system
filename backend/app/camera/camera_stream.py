@@ -44,6 +44,9 @@ def _new_camera_state():
     return {
         "capture": None,
         "device_index": 0,
+        # "camera" = live webcam, "file" = recorded mp4 chal raha hai
+        "source_type": "camera",
+        "loop_video": True,   # file khatam hote hi shuru se dobara chale
         "is_paused": False,
         "last_frame_bytes": None,
         "current_person_count": 0,
@@ -143,6 +146,33 @@ def start_camera(cam_id=1, device_index=None):
     return state["capture"].isOpened()
 
 
+def start_camera_from_file(cam_id, file_path, loop=True):
+    """
+    Live webcam ki jagah ek recorded .mp4 file ko "camera" ki tarah chalata
+    hai - baaki poora system (YOLO, pose, concealment, dashboard) isay
+    normal camera hi samjhega, kyunke generate_frames() same tarah frames
+    padhta hai chahe source webcam ho ya file.
+
+    loop=True (default): video khatam hote hi khud shuru se dobara chalti
+    hai - taake ek hi "chori" wali clip baar baar test ki ja sake bina
+    dobara button dabaye.
+    """
+    state = _get_state(cam_id)
+
+    if state["capture"] is not None:
+        state["capture"].release()
+
+    state["capture"] = cv2.VideoCapture(file_path)
+    state["source_type"] = "file"
+    state["loop_video"] = loop
+    state["is_paused"] = False
+
+    opened = state["capture"].isOpened()
+    if not opened:
+        state["capture"] = None
+    return opened
+
+
 def pause_camera(cam_id=1):
     state = _get_state(cam_id)
     state["is_paused"] = True
@@ -158,6 +188,7 @@ def stop_camera(cam_id=1):
     if state["capture"] is not None:
         state["capture"].release()
     state["capture"] = None
+    state["source_type"] = "camera"
     state["is_paused"] = False
     state["last_frame_bytes"] = None
     state["current_person_count"] = 0
@@ -364,6 +395,12 @@ def generate_frames(cam_id=1):
             ret, frame = state["capture"].read()
 
         if not ret:
+            if state["source_type"] == "file" and state["loop_video"]:
+                # Video file khatam ho gayi - shuru se dobara chalao (live
+                # camera ke liye yeh kabhi True nahi hota, wahan waisa hi
+                # rukega jaisa pehle tha)
+                state["capture"].set(cv2.CAP_PROP_POS_FRAMES, 0)
+                continue
             break
 
         height, width = frame.shape[:2]

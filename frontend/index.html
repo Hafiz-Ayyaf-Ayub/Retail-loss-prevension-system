@@ -35,10 +35,13 @@
                         <select id="deviceSelect1" class="device-select">
                             <option value="0">Laptop camera  </option>
                             <option value="1" selected>Mobile Camera </option>
+                            <option value="file">🎞 Video File</option>
                         </select>
+                        <input type="file" id="videoFileInput1" accept="video/*" class="hidden">
                         <button class="mini-btn mini-start" data-action="start" data-cam="1">▶</button>
                         <button class="mini-btn mini-pause" data-action="pause" data-cam="1" disabled>⏸</button>
                         <button class="mini-btn mini-stop" data-action="stop" data-cam="1" disabled>⏹</button>
+                        <button class="mini-btn mini-zone" data-action="zone-toggle" data-cam="1">Zone: On</button>
                     </div>
                 </div>
 
@@ -60,10 +63,13 @@
                             
                             <option value="0" selected>Laptop camera </option>
                             <option value="1">Mobile Camera  </option>
+                            <option value="file">🎞 Video File</option>
                         </select>
+                        <input type="file" id="videoFileInput2" accept="video/*" class="hidden">
                         <button class="mini-btn mini-start" data-action="start" data-cam="2">▶</button>
                         <button class="mini-btn mini-pause" data-action="pause" data-cam="2" disabled>⏸</button>
                         <button class="mini-btn mini-stop" data-action="stop" data-cam="2" disabled>⏹</button>
+                        <button class="mini-btn mini-zone" data-action="zone-toggle" data-cam="2">Zone: On</button>
                     </div>
                 </div>
 

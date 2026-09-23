@@ -11,17 +11,25 @@ last_alert_time = {}
 # CONCEALMENT_SECONDS) tak continuously gayab raha (turant wapis nahi
 # aaya), tabhi woh "confirmed" alert banti hai. Isse false alarms kam
 # hote hain (jaise YOLO ka koi ek frame miss ho jana).
-# Key format: "{global_id}_{item_class}" -> {"since": timestamp, ...}
+#
+# NOTE (fix): Key ab sirf GLOBAL ID hai - "{global_id}_{item_class}" nahi.
+# Pehle agar item wapis dikhne par YOLO usay thori si alag class bol deta
+# (jaise Bottle ko Cup), ya Re-ID naya Global ID de deta, to system
+# "reappear" pehchanta hi nahi tha aur alert 60 second tak red atki rehti
+# thi. Ab hum PERSON ko track karte hain, item ki class ko nahi - jo bhi
+# item us insaan ke paas dobara nazar aaye (chahe uska naam kuch bhi ho),
+# alert clear ho jati hai.
+# Key format: global_id -> {"since": timestamp, ...}
 pending_concealments = {}
 
-# Yaad rakhta hai kaunsi concealment alert is waqt "active" (on-screen) hai.
-# Key ab GLOBAL ID se banti hai (local per-camera ID se nahi) - taake yeh
-# cross-camera kaam kare (jo banda Camera 1 mein flag hua wahi Camera 2 mein
-# bhi red dikhe, kyunke Global ID sab cameras mein same rehta hai).
-# Key format: "{global_id}_{item_class}"  ->  True/False
+# Yaad rakhta hai kaunse insaan (Global ID) ki concealment alert is waqt
+# "active" (on-screen) hai. Global ID se hone ki wajah se yeh cross-camera
+# kaam karta hai - jo banda Camera 1 mein flag hua wahi Camera 2 mein bhi
+# red dikhta hai, chahe wo doosri camera mein chala jaye.
+# Key format: global_id -> True/False
 active_concealments = {}
 
-ALERT_DISPLAY_SECONDS = 60
+ALERT_DISPLAY_SECONDS = 300
 ALERT_COOLDOWN_SECONDS = 15
 SUSTAINED_CONCEALMENT_SECONDS = 2.0  # itni dair continuously gayab rahe tab confirm ho
 
@@ -63,11 +71,11 @@ def update_concealment(persons, items):
     # (sirf EK dafa, jab pehli baar confirm ho, dobara nahi).
     new_alerts = []
 
-    # ---- STEP 1: Reappearance check ----
+    # ---- STEP 1: Reappearance check (PERSON-level, item ki class se independent) ----
     # Agar kisi (Global ID) person ke paas pehle "concealment" alert active
-    # thi, aur ab wahi type ka item dobara unke qareeb nazar aa gaya hai
-    # (chahe yeh kisi bhi camera mein ho, kyunke Global ID sab cameras mein
-    # same hai) - to iska matlab shayad chori nahi thi. Active alert hata do.
+    # thi, aur ab KOI BHI item unke qareeb dobara nazar aa gaya hai (chahe
+    # yeh kisi bhi camera mein ho, aur chahe YOLO usay thodi alag class bhi
+    # bole) - to iska matlab shayad chori nahi thi. Active alert hata do.
     for item in items:
         item_class = item["class_name"]
         icx = (item["x1"] + item["x2"]) // 2
@@ -76,7 +84,6 @@ def update_concealment(persons, items):
         for person in persons:
             if _is_near(icx, icy, person):
                 global_id = person["global_id"]
-                cooldown_key = f"{global_id}_{item_class}"
 
                 # NOTE: Pehle yahan "pending" bhi turant clear ho jati thi
                 # jaise hi item ek dafa bhi dobara nazar aata - lekin item
@@ -87,13 +94,12 @@ def update_concealment(persons, items):
                 # Ab PENDING ko yahan clear NAHI karte - woh apna 2-second
                 # countdown continuously chalata rahega chahe beech mein
                 # flicker ho. Sirf CONFIRMED (active_concealments) wapis
-                # green hoti hai jab item genuinely dobara dikhe.
-                if active_concealments.get(cooldown_key):
+                # green hoti hai jab koi bhi item genuinely dobara dikhe.
+                if active_concealments.get(global_id):
                     recent_alerts = [
-                        a for a in recent_alerts
-                        if not (a["global_id"] == global_id and a["item"] == item_class)
+                        a for a in recent_alerts if a["global_id"] != global_id
                     ]
-                    active_concealments[cooldown_key] = False
+                    active_concealments[global_id] = False
 
                     concealment_history.append({
                         "time": time.strftime("%I:%M:%S %p"),
@@ -116,13 +122,12 @@ def update_concealment(persons, items):
                     break
 
                 global_id = person["global_id"]
-                cooldown_key = f"{global_id}_{last['class_name']}"
 
                 # Sirf PEHLI dafa gayab hone par pending shuru karo - agar
                 # pehle se pending hai to uska "since" time overwrite mat
                 # karo (warna item kabhi bhi threshold cross nahi karega).
-                if cooldown_key not in pending_concealments:
-                    pending_concealments[cooldown_key] = {
+                if global_id not in pending_concealments:
+                    pending_concealments[global_id] = {
                         "since": now,
                         "person_id": person["id"],
                         "global_id": global_id,
@@ -134,20 +139,19 @@ def update_concealment(persons, items):
         del item_last_seen[tid]
 
     # ---- STEP 3: Pending concealments jo threshold cross kar chuke - CONFIRM karo ----
-    for cooldown_key, pending in list(pending_concealments.items()):
+    for global_id, pending in list(pending_concealments.items()):
         if now - pending["since"] < SUSTAINED_CONCEALMENT_SECONDS:
             continue  # abhi itni dair nahi hui - abhi bhi sirf "pending"
 
         # Threshold cross ho gayi - is pending ko final decide kar do
         # (chahe cooldown ki wajah se skip ho jaye, pending se hata do -
         # dobara har frame check karne ki zaroorat nahi).
-        del pending_concealments[cooldown_key]
+        del pending_concealments[global_id]
 
-        last_time = last_alert_time.get(cooldown_key, 0)
+        last_time = last_alert_time.get(global_id, 0)
         if now - last_time <= ALERT_COOLDOWN_SECONDS:
-            continue  # thodi dair pehle hi isi type ki alert ban chuki thi
+            continue  # thodi dair pehle hi isi insaan ki alert ban chuki thi
 
-        global_id = pending["global_id"]
         item_class = pending["item_class"]
         person_id = pending["person_id"]
 
@@ -170,17 +174,17 @@ def update_concealment(persons, items):
             "message": message
         })
 
-        last_alert_time[cooldown_key] = now
-        active_concealments[cooldown_key] = True
+        last_alert_time[global_id] = now
+        active_concealments[global_id] = True
 
     recent_alerts = [a for a in recent_alerts if now - a["created_at"] < ALERT_DISPLAY_SECONDS]
 
     # Jin alerts ka on-screen display time khatam ho gaya, unhe bhi
     # "not active" mark kar do (taake active_concealments state sahi rahe)
-    still_active_keys = {f"{a['global_id']}_{a['item']}" for a in recent_alerts}
-    for key in list(active_concealments.keys()):
-        if active_concealments[key] and key not in still_active_keys:
-            active_concealments[key] = False
+    still_active_gids = {a["global_id"] for a in recent_alerts}
+    for global_id in list(active_concealments.keys()):
+        if active_concealments[global_id] and global_id not in still_active_gids:
+            active_concealments[global_id] = False
 
     return recent_alerts, new_alerts
 
@@ -190,6 +194,8 @@ def get_concealment_flagged_ids():
     Un GLOBAL IDs ka set deta hai jinki koi na koi concealment alert
     is waqt active hai — chahe wo kisi bhi camera mein trigger hui ho.
     camera_stream.py isay har camera mein use karega taake us person ki
-    ID box (uska Global ID match kar ke) red/green dikhai ja sake.
+    ID box (uska Global ID match kar ke) red/green dikhai ja sake — is
+    liye wahi banda kisi bhi camera mein jaye, us camera ka feed usay
+    red dikhayega jab tak alert clear na ho.
     """
     return {a["global_id"] for a in recent_alerts}

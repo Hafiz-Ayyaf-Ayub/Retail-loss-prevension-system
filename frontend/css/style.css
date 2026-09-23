@@ -378,3 +378,26 @@ body {
     border-radius: 2px;
     cursor: nwse-resize;
 }
+.mini-zone {
+    /* Zone-overlay ke blue color (#3b82f6) se match karta hai, taake
+       yeh button visually "zone" feature se juda hua lage. */
+    background-color: #3b82f6;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 9px;
+    white-space: nowrap;
+}
+
+.mini-zone:hover {
+    background-color: #2563eb;
+}
+
+.mini-zone.zone-off {
+    /* Neutral grey - saaf tor par "band" (inactive) dikhta hai */
+    background-color: #475569;
+    color: #cbd5e1;
+}
+
+.mini-zone.zone-off:hover {
+    background-color: #334155;
+}

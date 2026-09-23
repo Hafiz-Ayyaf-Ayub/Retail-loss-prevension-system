@@ -17,6 +17,38 @@ const noHistoryMsgEl = document.getElementById("noHistoryMsg");
 
 let statsInterval = null;
 
+// Zone on/off state yahan JS mein bhi track karte hain (har camera ke liye
+// alag), taake iska button hamesha kaam kare - chahe zone overlay khud
+// is waqt "hidden" ho ya visible. (Pehle sirf overlay ke ANDAR wala
+// remove-button hi zone wapas ON kar sakta tha, aur woh khud overlay ke
+// sath hi ghayab ho jata tha - isliye "wapas on karne" ka koi tareeqa
+// nahi bachta tha, sirf server restart hi state reset karta tha.)
+const zoneEnabledState = {};
+
+function toggleZone(camId) {
+    const key = String(camId);
+    const currentlyEnabled = zoneEnabledState[key] !== false; // default: True
+    const newEnabled = !currentlyEnabled;
+    zoneEnabledState[key] = newEnabled;
+
+    const overlay = document.getElementById(`zoneOverlay${camId}`);
+    if (overlay) {
+        overlay.classList.toggle("zone-hidden", !newEnabled);
+    }
+
+    const zoneBtn = document.querySelector(`.mini-zone[data-cam="${camId}"]`);
+    if (zoneBtn) {
+        zoneBtn.textContent = newEnabled ? "Zone: On" : "Zone: Off";
+        zoneBtn.classList.toggle("zone-off", !newEnabled);
+    }
+
+    fetch(`/camera/zone/${camId}/toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: newEnabled })
+    }).catch(err => console.log(`Camera ${camId} zone toggle failed:`, err));
+}
+
 // ---- Per-camera controls ----
 
 function setCamButtons(camId, { startDisabled, pauseDisabled, stopDisabled }) {
@@ -25,27 +57,71 @@ function setCamButtons(camId, { startDisabled, pauseDisabled, stopDisabled }) {
     document.querySelector(`.mini-stop[data-cam="${camId}"]`).disabled = stopDisabled;
 }
 
-async function startCam(camId) {
-    const deviceIndex = document.getElementById(`deviceSelect${camId}`).value;
+function markCamRunning(camId) {
     const overlay = document.getElementById(`pausedOverlay${camId}`);
     const img = document.getElementById(`videoFeed${camId}`);
 
-    const response = await fetch(`/camera/start/${camId}?device_index=${deviceIndex}`, { method: "POST" });
+    img.src = `/video-feed/${camId}?t=` + new Date().getTime();
+    overlay.classList.add("hidden");
+    setCamButtons(camId, { startDisabled: true, pauseDisabled: false, stopDisabled: false });
+
+    if (camId === "1" || camId === 1) {
+        statusBadge.textContent = "● LIVE";
+        statusBadge.className = "status-badge";
+    }
+    startStatsPolling();
+}
+
+function markCamFailed(camId, message) {
+    const overlay = document.getElementById(`pausedOverlay${camId}`);
+    overlay.querySelector("p").textContent = message;
+    overlay.classList.remove("hidden");
+}
+
+async function uploadAndStartVideo(camId, file) {
+    const overlay = document.getElementById(`pausedOverlay${camId}`);
+    overlay.querySelector("p").textContent = "⏳ Uploading video…";
+    overlay.classList.remove("hidden");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const response = await fetch(`/camera/upload-video/${camId}?loop=true`, {
+            method: "POST",
+            body: formData,
+        });
+        const data = await response.json();
+
+        if (data.status === "started") {
+            markCamRunning(camId);
+        } else {
+            markCamFailed(camId, "⚠ Video Upload Failed");
+        }
+    } catch (error) {
+        console.log(`Camera ${camId} video upload failed:`, error);
+        markCamFailed(camId, "⚠ Video Upload Failed");
+    }
+}
+
+async function startCam(camId) {
+    const deviceValue = document.getElementById(`deviceSelect${camId}`).value;
+
+    // ---- "Video File" chuna gaya hai: HAMESHA naya file-picker kholo,
+    // koi purani video khud-ba-khud reuse nahi karni (user ne yahi mangi hai) ----
+    if (deviceValue === "file") {
+        document.getElementById(`videoFileInput${camId}`).click();
+        return;
+    }
+
+    // ---- Live camera (Laptop / Mobile) ----
+    const response = await fetch(`/camera/start/${camId}?device_index=${deviceValue}`, { method: "POST" });
     const data = await response.json();
 
     if (data.status === "started") {
-        img.src = `/video-feed/${camId}?t=` + new Date().getTime();
-        overlay.classList.add("hidden");
-        setCamButtons(camId, { startDisabled: true, pauseDisabled: false, stopDisabled: false });
-
-        if (camId === "1" || camId === 1) {
-            statusBadge.textContent = "● LIVE";
-            statusBadge.className = "status-badge";
-        }
-        startStatsPolling();
+        markCamRunning(camId);
     } else {
-        overlay.querySelector("p").textContent = "⚠ Camera Not Found";
-        overlay.classList.remove("hidden");
+        markCamFailed(camId, "⚠ Camera Not Found");
     }
 }
 
@@ -90,6 +166,20 @@ document.querySelectorAll(".cam-controls").forEach(panel => {
         if (action === "start") startCam(camId);
         if (action === "pause") pauseCam(camId);
         if (action === "stop") stopCam(camId);
+        if (action === "zone-toggle") toggleZone(camId);
+    });
+});
+
+// ---- Video-file input: file choose hote hi upload + start ----
+document.querySelectorAll("input[type=file][id^='videoFileInput']").forEach(input => {
+    input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("change", (e) => {
+        const camId = input.id.replace("videoFileInput", "");
+        const file = e.target.files[0];
+        if (file) {
+            uploadAndStartVideo(camId, file);
+        }
+        input.value = ""; // taake wahi file dobara chuni ja sake to bhi change fire ho
     });
 });
 
@@ -249,13 +339,7 @@ function setupZoneOverlay(camId) {
 
     removeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const nowHidden = overlay.classList.toggle("zone-hidden");
-
-        fetch(`/camera/zone/${camId}/toggle`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ enabled: !nowHidden })
-        }).catch(err => console.log(`Camera ${camId} zone toggle failed:`, err));
+        toggleZone(camId); // shared function - dashboard ke persistent button ke sath sync rehta hai
     });
 
     document.addEventListener("mousemove", (e) => {
